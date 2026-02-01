@@ -1,0 +1,6 @@
+# KARAN-KAVACH Backend Requirements
+# Hardware-Level Memory Exploitation Monitor
+
+psutil>=5.9.0
+flask>=2.3.0
+flask-cors>=4.0.0
