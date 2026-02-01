@@ -271,16 +271,6 @@ const POLL_INTERVAL = 5000; // Increase from 2000 to 5000
 
 ---
 
-## 👥 Team
-
-Built with dedication by:
-
-- **VISHAL** - Lead Developer
-- **KESHAV** - Backend Engineer  
-- **SANKALP** - Frontend Developer
-
----
-
 ## 📄 License
 
 This project is developed for educational and research purposes.
