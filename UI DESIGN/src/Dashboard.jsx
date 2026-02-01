@@ -2585,7 +2585,7 @@ const Dashboard = () => {
         {/* Footer */}
         <div className="py-3 text-center border-t border-white/5">
           <p className="text-gray-600 text-xs">
-            Built with dedication from <span className="text-[#4ceccb]">VISHAL</span>, <span className="text-[#a855f7]">KESHAV</span>, <span className="text-[#f53d7a]">SANKALP</span>
+            KARAN-KAVACH • Hardware-Level Memory Exploitation Monitor
           </p>
         </div>
       </motion.div>
