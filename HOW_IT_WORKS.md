@@ -58,36 +58,36 @@ This fundamental difference allows us to detect **zero-day attacks** that have n
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                           PRESENTATION TIER                              │
+│                           PRESENTATION TIER                             │
 │  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │                     React Frontend (Vite)                        │    │
-│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐           │    │
-│  │  │ CPU Card │ │ Mem Card │ │ Process  │ │ LBR      │           │    │
-│  │  │          │ │          │ │ List     │ │ Monitor  │           │    │
-│  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘           │    │
+│  │                     React Frontend (Vite)                       │    │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐            │    │
+│  │  │ CPU Card │ │ Mem Card │ │ Process  │ │ LBR      │            │    │
+│  │  │          │ │          │ │ List     │ │ Monitor  │            │    │
+│  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘            │    │
 │  └─────────────────────────────────────────────────────────────────┘    │
-│                                   │ REST API (JSON)                      │
+│                                   │ REST API (JSON)                     │
 ├───────────────────────────────────┼─────────────────────────────────────┤
-│                           APPLICATION TIER                               │
+│                           APPLICATION TIER                              │
 │  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │                     Flask API Server                             │    │
+│  │                     Flask API Server                            │    │
 │  │  ┌──────────────────────────────────────────────────────────┐   │    │
-│  │  │                  KaranKavach Class                        │   │    │
+│  │  │                  KaranKavach Class                       │   │    │
 │  │  │  ┌────────────┐ ┌────────────┐ ┌────────────┐            │   │    │
 │  │  │  │ Process    │ │ Memory     │ │ Threat     │            │   │    │
 │  │  │  │ Scanner    │ │ Analyzer   │ │ Classifier │            │   │    │
 │  │  │  └────────────┘ └────────────┘ └────────────┘            │   │    │
 │  │  └──────────────────────────────────────────────────────────┘   │    │
 │  └─────────────────────────────────────────────────────────────────┘    │
-│                                   │ System Calls                         │
+│                                   │ System Calls                        │
 ├───────────────────────────────────┼─────────────────────────────────────┤
-│                             DATA TIER                                    │
+│                             DATA TIER                                   │
 │  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │                    Operating System APIs                         │    │
-│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐           │    │
-│  │  │ psutil   │ │ /proc    │ │ MSR      │ │ WinAPI   │           │    │
-│  │  │ (Python) │ │ (Linux)  │ │ (Intel)  │ │ (Windows)│           │    │
-│  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘           │    │
+│  │                    Operating System APIs                        │    │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐            │    │
+│  │  │ psutil   │ │ /proc    │ │ MSR      │ │ WinAPI   │            │    │
+│  │  │ (Python) │ │ (Linux)  │ │ (Intel)  │ │ (Windows)│            │    │
+│  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘            │    │
 │  └─────────────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -99,7 +99,7 @@ Frontend (React)          Backend (Flask)           System (OS)
      │                         │                        │
      │ GET /api/processes      │                        │
      │ ───────────────────────>│                        │
-     │                         │ psutil.process_iter() │
+     │                         │ psutil.process_iter()  │
      │                         │ ───────────────────────>
      │                         │                        │
      │                         │ <─── Process List ─────│
@@ -125,7 +125,7 @@ Frontend (React)          Backend (Flask)           System (OS)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                          DATA FLOW DIAGRAM                               │
+│                          DATA FLOW DIAGRAM                              │
 └─────────────────────────────────────────────────────────────────────────┘
 
     ┌─────────────┐
@@ -141,20 +141,20 @@ Frontend (React)          Backend (Flask)           System (OS)
            │
            ▼ Raw Process Data
     ┌────────────────────────────────────────────────────────┐
-    │                   BACKEND ENGINE                        │
+    │                   BACKEND ENGINE                       │
     │  ┌─────────────────────────────────────────────────┐   │
-    │  │              scan_processes()                    │   │
-    │  │  1. Enumerate all processes                      │   │
-    │  │  2. Get CPU%, Memory%, Network connections       │   │
-    │  │  3. Check against suspicious patterns            │   │
-    │  │  4. Calculate threat score                       │   │
-    │  │  5. Classify: SAFE / MONITORING / THREAT         │   │
+    │  │              scan_processes()                   │   │
+    │  │  1. Enumerate all processes                     │   │
+    │  │  2. Get CPU%, Memory%, Network connections      │   │
+    │  │  3. Check against suspicious patterns           │   │
+    │  │  4. Calculate threat score                      │   │
+    │  │  5. Classify: SAFE / MONITORING / THREAT        │   │
     │  └─────────────────────────────────────────────────┘   │
     └────────────────────────┬───────────────────────────────┘
                              │
                              ▼ Processed Data (JSON)
     ┌────────────────────────────────────────────────────────┐
-    │                   FLASK API                             │
+    │                   FLASK API                            │
     │  /api/processes  → List of analyzed processes          │
     │  /api/cpu        → CPU usage per core                  │
     │  /api/memory     → RAM usage statistics                │
@@ -165,7 +165,7 @@ Frontend (React)          Backend (Flask)           System (OS)
                              │
                              ▼ HTTP Response (JSON)
     ┌────────────────────────────────────────────────────────┐
-    │                   REACT FRONTEND                        │
+    │                   REACT FRONTEND                       │
     │  ┌─────────────────────────────────────────────────┐   │
     │  │  useEffect() - Fetch every 2 seconds            │   │
     │  │  ┌─────────────────────────────────────────┐    │   │
@@ -175,8 +175,8 @@ Frontend (React)          Backend (Flask)           System (OS)
     │  │  │  fetch('/api/lbr')                      │    │   │
     │  │  └─────────────────────────────────────────┘    │   │
     │  └─────────────────────────────────────────────────┘   │
-    │                         │                               │
-    │                         ▼ setState()                    │
+    │                         │                              │
+    │                         ▼ setState()                   │
     │  ┌─────────────────────────────────────────────────┐   │
     │  │  UI Components Re-render                        │   │
     │  │  - CPU Cards update                             │   │
@@ -273,13 +273,13 @@ UI renders:
 ┌────────────────────────────────────┐
 │  CPU MONITOR                       │
 │  ┌──────────────────────────────┐  │
-│  │ Overall: ████████░░ 45.2%   │  │
+│  │ Overall: ████████░░ 45.2%    │  │
 │  └──────────────────────────────┘  │
 │                                    │
-│  Core 0: █████████░ 52.1%         │
-│  Core 1: ███████░░░ 38.4%         │
-│  Core 2: ███████████ 67.2%        │
-│  Core 3: █████░░░░░ 23.1%         │
+│  Core 0: █████████░ 52.1%          │
+│  Core 1: ███████░░░ 38.4%          │
+│  Core 2: ███████████ 67.2%         │
+│  Core 3: █████░░░░░ 23.1%          │
 └────────────────────────────────────┘
 ```
 
@@ -407,11 +407,11 @@ def detect_memory_attacks(self, process):
 ```
 LBR Stack (simplified):
 ┌─────────────────────────────────────┐
-│  Entry 0: 0x7fff1234 → 0x7fff5678  │  ← Most recent branch
-│  Entry 1: 0x7fff5678 → 0x7fff9abc  │
-│  Entry 2: 0x7fff9abc → 0x7fff1234  │
+│  Entry 0: 0x7fff1234 → 0x7fff5678   │  ← Most recent branch
+│  Entry 1: 0x7fff5678 → 0x7fff9abc   │
+│  Entry 2: 0x7fff9abc → 0x7fff1234   │
 │  ...                                │
-│  Entry 31: 0x7fff0000 → 0x7fff0100 │  ← Oldest branch
+│  Entry 31: 0x7fff0000 → 0x7fff0100  │  ← Oldest branch
 └─────────────────────────────────────┘
 ```
 
@@ -731,26 +731,26 @@ def check_network_connections(self, process):
 Traditional AV Scan:
 ┌──────────────────────────────────────────────────────────────┐
 │ For each file in system:                                     │
-│   1. Read file into memory                    [10-100ms]    │
-│   2. Calculate hash                           [1-10ms]      │
-│   3. Compare against 10M+ signatures          [10-100ms]    │
-│   4. Unpack/decompress if needed              [100ms+]      │
-│   5. Check for polymorphic patterns           [50ms+]       │
+│   1. Read file into memory                    [10-100ms]     │
+│   2. Calculate hash                           [1-10ms]       │
+│   3. Compare against 10M+ signatures          [10-100ms]     │
+│   4. Unpack/decompress if needed              [100ms+]       │
+│   5. Check for polymorphic patterns           [50ms+]        │
 │                                                              │
-│ Total per file: 171-360ms                                   │
-│ For 100,000 files: 4.75 - 10 HOURS                         │
+│ Total per file: 171-360ms                                    │
+│ For 100,000 files: 4.75 - 10 HOURS                           │
 └──────────────────────────────────────────────────────────────┘
 
 KARAN-KAVACH Scan:
 ┌──────────────────────────────────────────────────────────────┐
 │ For each running process (~200 typical):                     │
-│   1. Read process info (psutil)               [0.1ms]       │
-│   2. Analyze behavior patterns                [0.5ms]       │
-│   3. Check LBR data (Intel only)              [0.2ms]       │
-│   4. Calculate threat score                   [0.1ms]       │
+│   1. Read process info (psutil)               [0.1ms]        │
+│   2. Analyze behavior patterns                [0.5ms]        │
+│   3. Check LBR data (Intel only)              [0.2ms]        │
+│   4. Calculate threat score                   [0.1ms]        │
 │                                                              │
-│ Total per process: 0.9ms                                    │
-│ For 200 processes: 180ms (< 1 SECOND)                      │
+│ Total per process: 0.9ms                                     │
+│ For 200 processes: 180ms (< 1 SECOND)                        │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -813,48 +813,48 @@ KARAN-KAVACH:      2-5% sustained (polling interval)
 ```
 Intel CPU Architecture:
 ┌─────────────────────────────────────────────────────────────┐
-│                        Intel Core                            │
+│                        Intel Core                           │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │  Execution Core                                      │    │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐ │    │
-│  │  │ Branch Unit │  │ Execution   │  │ Memory      │ │    │
-│  │  │ + LBR Stack │  │ Units       │  │ Subsystem   │ │    │
-│  │  │ (32 entries)│  │             │  │             │ │    │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘ │    │
+│  │  Execution Core                                     │    │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  │    │
+│  │  │ Branch Unit │  │ Execution   │  │ Memory      │  │    │
+│  │  │ + LBR Stack │  │ Units       │  │ Subsystem   │  │    │
+│  │  │ (32 entries)│  │             │  │             │  │    │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘  │    │
 │  └─────────────────────────────────────────────────────┘    │
-│                                                              │
+│                                                             │
 │  LBR is a hardware register bank inside the CPU!            │
 │  It's Intel's proprietary technology since Nehalem (2008)   │
 └─────────────────────────────────────────────────────────────┘
 
 AMD CPU (different approach):
 ┌─────────────────────────────────────────────────────────────┐
-│                        AMD Ryzen                             │
+│                        AMD Ryzen                            │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │  Execution Core                                      │    │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐ │    │
-│  │  │ Branch Unit │  │ Execution   │  │ Memory      │ │    │
-│  │  │ + BRS       │  │ Units       │  │ Subsystem   │ │    │
-│  │  │ (different) │  │             │  │             │ │    │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘ │    │
+│  │  Execution Core                                     │    │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  │    │
+│  │  │ Branch Unit │  │ Execution   │  │ Memory      │  │    │
+│  │  │ + BRS       │  │ Units       │  │ Subsystem   │  │    │
+│  │  │ (different) │  │             │  │             │  │    │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘  │    │
 │  └─────────────────────────────────────────────────────┘    │
-│                                                              │
+│                                                             │
 │  AMD has BRS (Branch Sampling) - different API/format       │
 │  Not compatible with Intel LBR                              │
 └─────────────────────────────────────────────────────────────┘
 
 Apple Silicon (ARM):
 ┌─────────────────────────────────────────────────────────────┐
-│                        Apple M1/M2/M3                        │
+│                        Apple M1/M2/M3                       │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │  ARM64 Core                                          │    │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐ │    │
-│  │  │ Branch Unit │  │ Execution   │  │ Memory      │ │    │
-│  │  │ (no LBR)    │  │ Units       │  │ Subsystem   │ │    │
-│  │  │             │  │             │  │             │ │    │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘ │    │
+│  │  ARM64 Core                                         │    │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  │    │
+│  │  │ Branch Unit │  │ Execution   │  │ Memory      │  │    │
+│  │  │ (no LBR)    │  │ Units       │  │ Subsystem   │  │    │
+│  │  │             │  │             │  │             │  │    │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘  │    │
 │  └─────────────────────────────────────────────────────┘    │
-│                                                              │
+│                                                             │
 │  ARM architecture has Statistical Profiling Extensions      │
 │  Completely different from Intel LBR                        │
 └─────────────────────────────────────────────────────────────┘
@@ -979,4 +979,4 @@ KARAN-KAVACH represents a paradigm shift in endpoint security by focusing on **b
 
 ---
 
-**Built with ❤️ by VISHAL, KESHAV, and SANKALP**
+**Built with ❤️ by VISHAL YADAV
