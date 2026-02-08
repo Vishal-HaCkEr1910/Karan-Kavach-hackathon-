@@ -1,0 +1,15 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Test KARAN-KAVACH API",
+			"type": "shell",
+			"command": "/home/vishal-yadav/Desktop/KARAN-KAVACH/venv/bin/python /home/vishal-yadav/Desktop/KARAN-KAVACH/backend/test_api.py"
+		},
+		{
+			"label": "Test KAVACH Full Output",
+			"type": "shell",
+			"command": "/home/vishal-yadav/Desktop/KARAN-KAVACH/venv/bin/python /home/vishal-yadav/Desktop/KARAN-KAVACH/backend/test_api.py 2>&1"
+		}
+	]
+}

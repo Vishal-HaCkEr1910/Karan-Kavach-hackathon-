@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import logoImage from './logo.jpeg';
 import {
   Home,
   BarChart3,
@@ -35,6 +36,8 @@ import {
   Server,
   Globe,
   Skull,
+  StopCircle,
+  Trash2,
 } from 'lucide-react';
 
 // API Configuration
@@ -245,7 +248,7 @@ int init_module(void) {
 };
 
 // Sidebar Component
-const Sidebar = ({ processes, onScan, isScanning, onPidSearch, searchPid, setSearchPid, pidSearchResult, activeView, setActiveView, onOpenLBRAnalytics, onOpenSettings }) => {
+const Sidebar = ({ processes, onScan, isScanning, onPidSearch, searchPid, setSearchPid, pidSearchResult, activeView, setActiveView, onOpenLBRAnalytics, onOpenSettings, onScrollToReports, onKillProcess, killPid, setKillPid, killResult }) => {
   const navItems = [
     { icon: Home, label: 'Dashboard', view: 'dashboard' },
     { icon: Shield, label: 'Threat Monitor', view: 'dashboard' },
@@ -259,6 +262,9 @@ const Sidebar = ({ processes, onScan, isScanning, onPidSearch, searchPid, setSea
       onOpenLBRAnalytics();
     } else if (item.view === 'settings') {
       onOpenSettings();
+    } else if (item.view === 'reports') {
+      setActiveView('dashboard');
+      onScrollToReports();
     } else {
       setActiveView(item.view);
     }
@@ -274,12 +280,21 @@ const Sidebar = ({ processes, onScan, isScanning, onPidSearch, searchPid, setSea
       {/* Logo */}
       <div className="mb-6 px-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#4ceccb] to-[#a855f7] flex items-center justify-center shadow-[0_0_20px_rgba(76,236,203,0.3)]">
-            <Shield size={20} className="text-white" strokeWidth={2} />
-          </div>
+          <img 
+            src={logoImage} 
+            alt="KARAN-KAVACH Logo" 
+            className="w-10 h-10 rounded-xl object-cover shadow-[0_0_20px_rgba(76,236,203,0.3)]"
+          />
           <div>
             <h1 className="text-white font-bold text-sm tracking-wide">KARAN-KAVACH</h1>
-            <p className="text-[#4ceccb] text-[10px] tracking-widest">LBR MONITOR</p>
+            <div className="flex items-center gap-2">
+              <img 
+                src={logoImage} 
+                alt="LBR Monitor Logo" 
+                className="w-3 h-3 rounded object-cover"
+              />
+              <p className="text-[#4ceccb] text-[10px] tracking-widest">LBR MONITOR</p>
+            </div>
           </div>
         </div>
       </div>
@@ -346,6 +361,42 @@ const Sidebar = ({ processes, onScan, isScanning, onPidSearch, searchPid, setSea
           )}
         </div>
 
+        {/* Stop PID Input */}
+        <div className="mx-2 mb-2">
+          <div className="flex items-center gap-2">
+            <div className="flex-1 flex items-center bg-[#1a1c20] rounded-lg px-3 py-2 shadow-[inset_4px_4px_8px_#111215,inset_-4px_-4px_8px_#2d3138]">
+              <StopCircle size={14} className="text-[#f53d7a] mr-2" />
+              <input
+                type="text"
+                placeholder="Enter PID to stop..."
+                value={killPid}
+                onChange={(e) => setKillPid(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && onKillProcess(parseInt(killPid))}
+                className="bg-transparent text-white text-xs placeholder-gray-500 outline-none flex-1 w-full"
+              />
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => onKillProcess(parseInt(killPid))}
+              disabled={!killPid}
+              className="p-2 rounded-lg bg-[#f53d7a]/20 text-[#f53d7a] hover:bg-[#f53d7a]/30 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Stop Process"
+            >
+              <Trash2 size={14} />
+            </motion.button>
+          </div>
+          {killResult && (
+            <motion.p
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`text-xs mt-2 px-2 ${killResult.success ? 'text-green-400' : 'text-[#f53d7a]'}`}
+            >
+              {killResult.message}
+            </motion.p>
+          )}
+        </div>
+
         {/* Process List */}
         <div className="flex-1 mx-2 bg-[#1a1c20] rounded-xl shadow-[inset_4px_4px_8px_#111215,inset_-4px_-4px_8px_#2d3138] overflow-hidden">
           <div className="h-full max-h-[200px] overflow-y-auto p-2 space-y-1">
@@ -357,7 +408,7 @@ const Sidebar = ({ processes, onScan, isScanning, onPidSearch, searchPid, setSea
                   initial="hidden"
                   animate="visible"
                   transition={{ delay: index * 0.02 }}
-                  className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-xs ${
+                  className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-xs group hover:bg-white/5 ${
                     proc.highlighted ? 'bg-[#4ceccb]/20 ring-1 ring-[#4ceccb]' : ''
                   }`}
                 >
@@ -365,15 +416,29 @@ const Sidebar = ({ processes, onScan, isScanning, onPidSearch, searchPid, setSea
                     <span className="text-gray-500 font-mono w-10">{proc.pid}</span>
                     <span className="text-white truncate">{proc.name}</span>
                   </div>
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                    proc.status === 'THREAT' 
-                      ? 'bg-[#f53d7a]/20 text-[#f53d7a]' 
-                      : proc.status === 'SAFE'
-                      ? 'bg-green-500/20 text-green-400'
-                      : 'bg-yellow-500/20 text-yellow-400'
-                  }`}>
-                    {proc.status}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                      proc.status === 'THREAT' 
+                        ? 'bg-[#f53d7a]/20 text-[#f53d7a]' 
+                        : proc.status === 'SAFE'
+                        ? 'bg-green-500/20 text-green-400'
+                        : 'bg-yellow-500/20 text-yellow-400'
+                    }`}>
+                      {proc.status}
+                    </span>
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onKillProcess(proc.pid, proc.name);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-1 rounded bg-[#f53d7a]/20 text-[#f53d7a] hover:bg-[#f53d7a]/40 transition-opacity"
+                      title={`Stop process ${proc.pid}`}
+                    >
+                      <X size={12} />
+                    </motion.button>
+                  </div>
                 </motion.div>
               ))}
             </AnimatePresence>
@@ -411,9 +476,7 @@ const Sidebar = ({ processes, onScan, isScanning, onPidSearch, searchPid, setSea
       <div className="mt-4 pt-4 border-t border-white/5">
         <div className="flex items-center gap-3 px-4">
           <div className="relative">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#f53d7a] to-[#a855f7] flex items-center justify-center text-white font-semibold shadow-[0_0_15px_rgba(245,61,122,0.3)]">
-              K
-            </div>
+            <img src={logoImage} alt="KAVACH" className="w-10 h-10 rounded-full object-cover shadow-[0_0_15px_rgba(245,61,122,0.3)]" />
             <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[#1a1c20]"></div>
           </div>
           <div>
@@ -1767,7 +1830,11 @@ const RightPanel = ({ onKillAllThreats, onShutdown, searchQuery, setSearchQuery,
         </div>
         <div className="flex justify-between">
           <span className="text-gray-500">Ring Level:</span>
-          <span className="text-[#a855f7]">Ring {metrics?.ring_level || 3}</span>
+          <span className={`font-bold ${
+            (metrics?.ring_level || 3) <= 1 ? 'text-[#4ceccb]' :
+            (metrics?.ring_level || 3) <= 2 ? 'text-[#a855f7]' :
+            'text-yellow-400'
+          }`}>Ring {metrics?.ring_level || 3}</span>
         </div>
       </div>
     </motion.div>
@@ -1847,8 +1914,11 @@ const Dashboard = () => {
     darkMode: true,
     autoKill: false,
   });
+  const [killPid, setKillPid] = useState('');
+  const [killResult, setKillResult] = useState(null);
   
   const pollingRef = useRef(null);
+  const reportsSectionRef = useRef(null);
 
   // Settings change handler
   const handleSettingsChange = useCallback((key, value) => {
@@ -1998,27 +2068,26 @@ const Dashboard = () => {
     const fetchProcesses = async () => {
       const data = await api.get('/processes');
       if (data && data.processes) {
-        // Also get simulated threats and add them
-        const simThreats = await api.get('/simulated_threats');
-        let combinedProcesses = [...data.processes];
+        // Backend now includes simulated threats in the response
+        setProcesses(data.processes);
         
-        if (simThreats && simThreats.threats && simThreats.threats.length > 0) {
-          simThreats.threats.forEach(threat => {
-            combinedProcesses.unshift({
-              pid: threat.pid,
-              name: threat.name,
-              status: 'THREAT',
-              cpu_percent: threat.cpu_percent,
-              memory_percent: threat.memory_percent,
-              highlighted: true,
-              simulated: true,
+        // Also sync simulated threats state
+        if (data.simulated_count > 0) {
+          const simThreats = await api.get('/simulated_threats');
+          if (simThreats && simThreats.threats) {
+            setSimulatedThreats(simThreats.threats);
+            const activeThreats = {};
+            simThreats.threats.forEach(t => {
+              activeThreats[t.threat_type] = true;
             });
-          });
-          setSimulatedThreats(simThreats.threats);
+            setExecutingThreats(activeThreats);
+          }
+        } else {
+          setSimulatedThreats([]);
+          setExecutingThreats({});
         }
         
-        setProcesses(combinedProcesses);
-        addLog(`Loaded ${data.processes.length} real processes`, 'success');
+        addLog(`Loaded ${data.processes.length} processes (${data.simulated_count || 0} threats)`, 'success');
       } else {
         // Use fallback data
         setProcesses(generateProcesses());
@@ -2164,28 +2233,16 @@ const Dashboard = () => {
         addLog(`[DEMO] Threat spawned: ${result.name} (PID: ${result.pid})`, 'error');
         setAlert({ 
           type: 'danger', 
-          message: `⚠️ THREAT DETECTED: ${result.name} - Auto-stopping in 8s` 
+          message: `⚠️ THREAT DETECTED: ${result.name} (PID: ${result.pid})` 
         });
         
-        // Refresh processes to include simulated threat
+        // Refresh processes — backend now includes simulated threats
         const data = await api.get('/processes');
         if (data && data.processes) {
-          // Add simulated threat to process list
+          setProcesses(data.processes);
+          // Update simulated threats state
           const simThreats = await api.get('/simulated_threats');
           if (simThreats && simThreats.threats) {
-            const combinedProcesses = [...data.processes];
-            simThreats.threats.forEach(threat => {
-              combinedProcesses.unshift({
-                pid: threat.pid,
-                name: threat.name,
-                status: 'THREAT',
-                cpu_percent: threat.cpu_percent,
-                memory_percent: threat.memory_percent,
-                highlighted: true,
-                simulated: true,
-              });
-            });
-            setProcesses(combinedProcesses);
             setSimulatedThreats(simThreats.threats);
           }
         }
@@ -2242,6 +2299,18 @@ const Dashboard = () => {
         setSimulatedThreats([]);
         setExecutingThreats({});
         
+        // Refresh integrity score & metrics immediately
+        const integrity = await api.get('/integrity');
+        if (integrity) {
+          setIntegrityScore(integrity.score || 100);
+          setIntegrityStatus(integrity.status || 'SECURE');
+          setIntegrityData(integrity);
+        }
+        const metricsData = await api.get('/metrics');
+        if (metricsData) {
+          setSecurityMetrics(metricsData);
+        }
+        
         setTimeout(() => setAlert(null), 4000);
       } else {
         addLog('Failed to kill threats', 'error');
@@ -2251,6 +2320,72 @@ const Dashboard = () => {
     } catch (error) {
       addLog(`Error killing threats: ${error.message}`, 'error');
     }
+  }, [addLog]);
+
+  // Handle killing a single process by PID
+  const handleKillProcess = useCallback(async (pid, processName = '') => {
+    if (!pid || isNaN(pid)) {
+      setKillResult({ success: false, message: 'Invalid PID format' });
+      setTimeout(() => setKillResult(null), 3000);
+      return;
+    }
+    
+    addLog(`Attempting to stop process ${pid}${processName ? ` (${processName})` : ''}...`, 'warning');
+    
+    try {
+      const result = await api.post(`/kill/${pid}`);
+      
+      if (result && result.success) {
+        addLog(`Process ${pid} stopped successfully`, 'success');
+        setKillResult({ success: true, message: `✅ Process ${pid} stopped` });
+        setKillPid('');
+        
+        // Immediately remove from local process list for instant UI update
+        setProcesses(prev => prev.filter(p => p.pid !== pid));
+        
+        // If it was a simulated threat, clear its executing state
+        if (result.simulated) {
+          setSimulatedThreats(prev => {
+            const updated = prev.filter(t => t.pid !== pid);
+            // Also update executing threats map
+            const activeThreats = {};
+            updated.forEach(t => { activeThreats[t.threat_type] = true; });
+            setExecutingThreats(activeThreats);
+            return updated;
+          });
+        }
+        
+        // Refresh processes from backend to stay in sync
+        const data = await api.get('/processes');
+        if (data && data.processes) {
+          setProcesses(data.processes);
+        }
+        
+        // Refresh integrity score & metrics immediately
+        const integrity = await api.get('/integrity');
+        if (integrity) {
+          setIntegrityScore(integrity.score || 100);
+          setIntegrityStatus(integrity.status || 'SECURE');
+          setIntegrityData(integrity);
+        }
+        const metrics = await api.get('/metrics');
+        if (metrics) {
+          setSecurityMetrics(metrics);
+        }
+        
+        setAlert({ type: 'success', message: `Process ${pid} terminated` });
+        setTimeout(() => setAlert(null), 3000);
+      } else {
+        const errorMsg = result?.message || 'Failed to stop process';
+        addLog(`Failed to stop process ${pid}: ${errorMsg}`, 'error');
+        setKillResult({ success: false, message: `❌ ${errorMsg}` });
+      }
+    } catch (error) {
+      addLog(`Error stopping process ${pid}: ${error.message}`, 'error');
+      setKillResult({ success: false, message: `❌ Error: ${error.message}` });
+    }
+    
+    setTimeout(() => setKillResult(null), 3000);
   }, [addLog]);
 
   const handleShutdown = useCallback(async () => {
@@ -2362,7 +2497,7 @@ const Dashboard = () => {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-[1400px] h-[850px] bg-[#1a1c20] rounded-[40px] overflow-hidden flex flex-col"
+        className="w-full max-w-[1400px] min-h-[850px] max-h-[95vh] bg-[#1a1c20] rounded-[40px] overflow-hidden flex flex-col"
         style={{
           boxShadow: '20px 20px 60px #111215, -10px -10px 30px #232529',
         }}
@@ -2381,6 +2516,13 @@ const Dashboard = () => {
             setActiveView={setActiveView}
             onOpenLBRAnalytics={() => setShowLBRAnalytics(true)}
             onOpenSettings={() => setShowSettings(true)}
+            onScrollToReports={() => {
+              reportsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+            onKillProcess={handleKillProcess}
+            killPid={killPid}
+            setKillPid={setKillPid}
+            killResult={killResult}
           />
 
           {/* Main Content */}
@@ -2555,7 +2697,7 @@ const Dashboard = () => {
             </motion.div>
             
             {/* Reports Section */}
-            <motion.div variants={containerVariants} className="mt-4">
+            <motion.div variants={containerVariants} className="mt-4 mb-8" ref={reportsSectionRef}>
               <ReportsSection 
                 cpuUsage={cpuUsage}
                 memoryUsage={memoryUsage}
@@ -2567,6 +2709,19 @@ const Dashboard = () => {
                 simulatedThreats={simulatedThreats}
               />
             </motion.div>
+            
+            {/* Footer - Inside scrollable area */}
+            <div className="py-4 text-center border-t border-white/5 mt-auto">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <img src={logoImage} alt="KARAN-KAVACH" className="w-4 h-4 rounded object-cover" />
+                <p className="text-gray-600 text-xs">
+                  KARAN-KAVACH • Hardware-Level Memory Exploitation Monitor
+                </p>
+              </div>
+              <p className="text-gray-700 text-[10px]">
+                Made with 💜 & Zeal
+              </p>
+            </div>
           </motion.div>
 
           {/* Right Panel */}
@@ -2580,13 +2735,6 @@ const Dashboard = () => {
             metrics={securityMetrics}
             lbrData={lbrData}
           />
-        </div>
-
-        {/* Footer */}
-        <div className="py-3 text-center border-t border-white/5">
-          <p className="text-gray-600 text-xs">
-            KARAN-KAVACH • Hardware-Level Memory Exploitation Monitor
-          </p>
         </div>
       </motion.div>
 

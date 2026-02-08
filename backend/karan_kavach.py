@@ -233,16 +233,33 @@ class KaranKavach:
                             break
                     
                     # Check command line for suspicious patterns
+                    # NOTE: Be careful to avoid false positives with legitimate processes
                     cmdline = pinfo.get('cmdline', [])
                     if cmdline:
                         cmdline_str = ' '.join(cmdline).lower()
-                        suspicious_cmds = ['reverse', 'shell', 'exploit', 'payload', 
-                                          'meterpreter', 'bind', 'connect back']
-                        for sus_cmd in suspicious_cmds:
-                            if sus_cmd in cmdline_str:
-                                status = 'THREAT'
-                                threat_reasons.append(f"Suspicious command: {sus_cmd}")
-                                break
+                        
+                        # Skip detection for known legitimate processes that contain "shell"
+                        # These are normal system processes, not actual threats
+                        legitimate_shell_processes = [
+                            'gnome-shell', 'bash', 'zsh', 'fish', 'sh', 'dash', 'ksh', 'csh', 'tcsh',
+                            'gdm-wayland-session', 'gdm-x-session', 'gnome-shell-calendar-server',
+                            'gjs', 'dbus-daemon', 'systemd', 'xfce4-panel', 'plasmashell',
+                            'gnome-session', 'mate-panel', 'cinnamon', 'budgie-panel',
+                            'code', 'node', 'npm', 'electron'  # VS Code and related
+                        ]
+                        
+                        is_legitimate = any(legit in name_lower for legit in legitimate_shell_processes)
+                        
+                        if not is_legitimate:
+                            # Only check suspicious commands for non-legitimate processes
+                            suspicious_cmds = ['reverse_shell', 'revshell', 'bind_shell', 
+                                              'exploit', 'payload', 'meterpreter', 'connect back',
+                                              'nc -e', 'ncat -e', 'bash -i']
+                            for sus_cmd in suspicious_cmds:
+                                if sus_cmd in cmdline_str:
+                                    status = 'THREAT'
+                                    threat_reasons.append(f"Suspicious command: {sus_cmd}")
+                                    break
                     
                     # Check for suspicious network connections
                     try:
@@ -460,6 +477,13 @@ class KaranKavach:
             'cpu_healthy': True,
             'memory_healthy': True,
         }
+        
+        # Clean up expired simulated threats first
+        current_time = time.time()
+        self.simulated_threats = [
+            t for t in self.simulated_threats
+            if (current_time - t['start_time']) < t.get('auto_stop_after', 300)
+        ]
         
         # Get real processes and count threats
         processes = self.get_real_processes()
@@ -824,6 +848,9 @@ class KaranKavach:
         # Threats blocked is the count of actual threat processes detected
         threats_blocked = threat_processes + len(self.simulated_threats)
         
+        # Detect ring level based on actual privileges
+        ring_level, ring_capabilities = self._detect_ring_level()
+        
         return {
             'branches_monitored': branches_monitored,
             'threats_blocked': threats_blocked,
@@ -835,13 +862,151 @@ class KaranKavach:
             'total_processes': total_processes,
             'safe_processes': safe_processes,
             'warning_processes': warning_processes,
-            'threat_processes': threat_processes,
+            'threat_processes': threat_processes + len(self.simulated_threats),
             'vm_detected': vm_detected,
             'vm_type': vm_info.get('type', 'Native') if isinstance(vm_info, dict) else 'Native',
             'cpu_type': cpu_info,
-            'ring_level': 3,  # User space (Ring 0 would require kernel module)
+            'ring_level': ring_level,
+            'ring_capabilities': ring_capabilities,
             'timestamp': datetime.now().isoformat(),
         }
+    
+    def _detect_ring_level(self):
+        """Detect the actual privilege ring level based on available system access.
+        
+        Ring 0: Full kernel mode (requires loadable kernel module)
+        Ring 1: Privileged kernel interfaces (root + /dev/mem, MSR, kcore)
+        Ring 2: Elevated access (root + /proc/*, perf_event, eBPF)
+        Ring 3: User space (standard user)
+        """
+        ring_level = 3
+        capabilities = {
+            'root_access': False,
+            'proc_kcore': False,
+            'dev_mem': False,
+            'msr_access': False,
+            'perf_event': False,
+            'ptrace_scope': False,
+            'ebpf_access': False,
+            'proc_maps': False,
+            'netlink': False,
+        }
+        
+        system = platform.system().lower()
+        
+        # Check if running as root
+        try:
+            capabilities['root_access'] = (os.geteuid() == 0)
+        except AttributeError:
+            pass  # Windows
+        
+        if system == 'linux':
+            # Ring 1 checks — privileged kernel interfaces
+            # /dev/mem — direct physical memory access
+            try:
+                if os.path.exists('/dev/mem') and os.access('/dev/mem', os.R_OK):
+                    capabilities['dev_mem'] = True
+            except:
+                pass
+            
+            # /dev/cpu/*/msr — Model Specific Registers (LBR, performance counters)
+            try:
+                msr_paths = ['/dev/cpu/0/msr', '/dev/msr0']
+                for msr_path in msr_paths:
+                    if os.path.exists(msr_path) and os.access(msr_path, os.R_OK):
+                        capabilities['msr_access'] = True
+                        break
+                # Also check if msr module is loaded
+                if not capabilities['msr_access']:
+                    result = subprocess.run(['lsmod'], capture_output=True, text=True, timeout=3)
+                    if 'msr' in result.stdout:
+                        capabilities['msr_access'] = True
+            except:
+                pass
+            
+            # /proc/kcore — kernel virtual memory image
+            try:
+                if os.path.exists('/proc/kcore') and os.access('/proc/kcore', os.R_OK):
+                    capabilities['proc_kcore'] = True
+            except:
+                pass
+            
+            # Ring 2 checks — elevated access
+            # perf_event_open — hardware performance counters
+            try:
+                perf_paranoid = '/proc/sys/kernel/perf_event_paranoid'
+                if os.path.exists(perf_paranoid):
+                    with open(perf_paranoid, 'r') as f:
+                        level = int(f.read().strip())
+                        # -1 = no restrictions, 0 = user, 1 = kernel, 2 = cpu, 3 = nothing
+                        capabilities['perf_event'] = (level <= 1) or capabilities['root_access']
+            except:
+                pass
+            
+            # ptrace scope — ability to trace other processes
+            try:
+                ptrace_file = '/proc/sys/kernel/yama/ptrace_scope'
+                if os.path.exists(ptrace_file):
+                    with open(ptrace_file, 'r') as f:
+                        scope = int(f.read().strip())
+                        capabilities['ptrace_scope'] = (scope == 0) or capabilities['root_access']
+            except:
+                pass
+            
+            # /proc/<pid>/maps — process memory maps
+            try:
+                with open(f'/proc/{os.getpid()}/maps', 'r') as f:
+                    f.readline()
+                    capabilities['proc_maps'] = True
+            except:
+                pass
+            
+            # eBPF access
+            try:
+                ebpf_unprivileged = '/proc/sys/kernel/unprivileged_bpf_disabled'
+                if os.path.exists(ebpf_unprivileged):
+                    with open(ebpf_unprivileged, 'r') as f:
+                        disabled = int(f.read().strip())
+                        capabilities['ebpf_access'] = (disabled == 0) or capabilities['root_access']
+            except:
+                pass
+            
+            # Netlink socket for kernel communication
+            try:
+                import socket as sock
+                nl = sock.socket(sock.AF_NETLINK, sock.SOCK_DGRAM, 15)  # NETLINK_KOBJECT_UEVENT
+                nl.close()
+                capabilities['netlink'] = True
+            except:
+                pass
+        
+        elif system == 'windows':
+            # Windows privilege checks
+            try:
+                import ctypes
+                capabilities['root_access'] = ctypes.windll.shell32.IsUserAnAdmin() != 0
+            except:
+                pass
+        
+        # Determine ring level from capabilities
+        ring1_caps = [capabilities['dev_mem'], capabilities['msr_access'], capabilities['proc_kcore']]
+        ring2_caps = [capabilities['perf_event'], capabilities['ptrace_scope'], 
+                      capabilities['ebpf_access'], capabilities['proc_maps'], capabilities['netlink']]
+        
+        if capabilities['root_access'] and any(ring1_caps):
+            ring_level = 1
+        elif capabilities['root_access'] and any(ring2_caps):
+            ring_level = 2
+        elif capabilities['root_access']:
+            ring_level = 2  # Root always gets at least Ring 2
+        else:
+            ring_level = 3
+        
+        self._log(f"Ring level detected: Ring {ring_level} (root={capabilities['root_access']}, "
+                  f"dev_mem={capabilities['dev_mem']}, msr={capabilities['msr_access']}, "
+                  f"perf={capabilities['perf_event']})", "info")
+        
+        return ring_level, capabilities
     
     def get_full_status(self):
         """Get complete system status for dashboard"""
@@ -881,9 +1046,35 @@ def create_api_server():
     
     @app.route('/api/processes', methods=['GET'])
     def get_processes():
-        """Get all running processes"""
+        """Get all running processes including simulated threats"""
+        processes = kavach.get_real_processes()
+        
+        # Clean up expired simulated threats
+        current_time = time.time()
+        kavach.simulated_threats = [
+            t for t in kavach.simulated_threats
+            if (current_time - t['start_time']) < t.get('auto_stop_after', 300)
+        ]
+        
+        # Include active simulated threats at the top of the process list
+        for threat in kavach.simulated_threats:
+            processes.insert(0, {
+                'pid': threat['pid'],
+                'name': threat['name'],
+                'status': 'THREAT',
+                'cpu_percent': threat['cpu_percent'],
+                'memory_percent': threat['memory_percent'],
+                'username': 'SIMULATED',
+                'process_status': 'running',
+                'threat_reasons': [f"Simulated {threat['threat_type']} attack"],
+                'highlighted': True,
+                'simulated': True,
+                'threat_type': threat['threat_type'],
+            })
+        
         return jsonify({
-            'processes': kavach.get_real_processes(),
+            'processes': processes,
+            'simulated_count': len(kavach.simulated_threats),
             'timestamp': datetime.now().isoformat()
         })
     
@@ -956,7 +1147,19 @@ def create_api_server():
     
     @app.route('/api/kill/<int:pid>', methods=['POST'])
     def kill_process(pid):
-        """Kill a process (requires appropriate permissions)"""
+        """Kill a process — handles both real and simulated PIDs"""
+        # First check if it's a simulated threat (PIDs 90000-99999)
+        for threat in kavach.simulated_threats:
+            if threat['pid'] == pid:
+                kavach.simulated_threats.remove(threat)
+                kavach._log(f"[DEMO] Simulated threat killed: {threat['name']} (PID: {pid})", "success")
+                return jsonify({
+                    'success': True,
+                    'message': f'Simulated threat {threat["name"]} (PID: {pid}) terminated',
+                    'simulated': True
+                })
+        
+        # Otherwise try to kill the real process
         try:
             proc = psutil.Process(pid)
             proc.terminate()
@@ -965,7 +1168,7 @@ def create_api_server():
         except psutil.NoSuchProcess:
             return jsonify({'success': False, 'message': 'Process not found'})
         except psutil.AccessDenied:
-            return jsonify({'success': False, 'message': 'Access denied'})
+            return jsonify({'success': False, 'message': 'Access denied — run server with sudo for Ring-1 privileges'})
         except Exception as e:
             return jsonify({'success': False, 'message': str(e)})
     
@@ -997,7 +1200,7 @@ def create_api_server():
             'cpu_percent': random.uniform(15, 45),
             'memory_percent': random.uniform(5, 20),
             'start_time': time.time(),
-            'auto_stop_after': 8  # Auto stop after 8 seconds
+            'auto_stop_after': 300  # Auto stop after 5 minutes (persistent for demo)
         }
         kavach.simulated_threats.append(simulated)
         kavach._log(f"[DEMO] Simulated threat started: {threat_name} (PID: {fake_pid})", "warning")
