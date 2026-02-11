@@ -1,4 +1,5 @@
 # 🛡️ KARAN-KAVACH
+<img width="2880" height="1800" alt="Screenshot from 2026-02-03 22-59-40" src="https://github.com/user-attachments/assets/efa8c474-fd98-4359-9972-7906e6572cf1" />
 
 ## Hardware-Level Memory Exploitation Monitor
 
