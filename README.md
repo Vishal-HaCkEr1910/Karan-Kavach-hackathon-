@@ -1,5 +1,6 @@
 #  KARAN-KAVACH
 ## To use visit : https://karan-kavach-download-page.vercel.app
+#UI:
 <img width="2880" height="1800" alt="Screenshot from 2026-02-03 22-59-40" src="https://github.com/user-attachments/assets/efa8c474-fd98-4359-9972-7906e6572cf1" />
 
 ## Hardware-Level Memory Exploitation Monitor
@@ -86,6 +87,12 @@ npm install
 
 Open a terminal and run:
 
+Open a terminal and run:
+
+```bash
+sources venv/bin/activate   #for mac and linux
+venv\Scripts\activate       #for windows
+```
 ```bash
 cd backend
 python3 karan_kavach.py
@@ -96,7 +103,7 @@ You should see:
 ```
 ╔═══════════════════════════════════════════════════════════════╗
 ║                                                               ║
-║   KARAN-KAVACH                                               ║
+║   KARAN-KAVACH                                                ║
 ║   Hardware-Level Memory Exploitation Monitor                  ║
 ║                                                               ║
 ╚═══════════════════════════════════════════════════════════════╝
@@ -190,30 +197,30 @@ The dashboard is divided into several sections:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        KARAN-KAVACH                              │
+│                        KARAN-KAVACH                             │
 ├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   ┌─────────────────┐         ┌─────────────────────────────┐  │
-│   │   React Frontend │ ◄─────► │    Flask Backend (API)     │  │
-│   │   (Port 5173)    │  REST   │    (Port 5001)             │  │
-│   └─────────────────┘         └─────────────────────────────┘  │
-│                                          │                       │
-│                                          ▼                       │
-│                               ┌─────────────────────────────┐  │
-│                               │   KaranKavach Engine        │  │
-│                               │   - Process Scanner         │  │
-│                               │   - Memory Monitor          │  │
-│                               │   - LBR Reader (Intel)      │  │
-│                               │   - Threat Analyzer         │  │
-│                               └─────────────────────────────┘  │
-│                                          │                       │
-│                                          ▼                       │
-│                               ┌─────────────────────────────┐  │
-│                               │   Operating System APIs     │  │
-│                               │   - psutil (cross-platform) │  │
-│                               │   - MSR (Intel LBR)         │  │
-│                               └─────────────────────────────┘  │
-│                                                                  │
+│                                                                 │
+│   ┌─────────────────┐         ┌─────────────────────────────┐   │
+│   │   React Frontend│ ◄─────► │    Flask Backend (API)      │   │
+│   │   (Port 5173)   │  REST   │    (Port 5001)              │   │
+│   └─────────────────┘         └─────────────────────────────┘   │
+│                                          │                      │
+│                                          ▼                      │
+│                               ┌─────────────────────────────┐   │
+│                               │   KaranKavach Engine        │   │
+│                               │   - Process Scanner         │   │
+│                               │   - Memory Monitor          │   │
+│                               │   - LBR Reader (Intel)      │   │
+│                               │   - Threat Analyzer         │   │
+│                               └─────────────────────────────┘   │
+│                                          │                      │
+│                                          ▼                      │
+│                               ┌─────────────────────────────┐   │
+│                               │   Operating System APIs     │   │
+│                               │   - psutil (cross-platform) │   │
+│                               │   - MSR (Intel LBR)         │   │
+│                               └─────────────────────────────┘   │
+│                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
